@@ -1,0 +1,52 @@
+[package]
+name = "rust_lib_my_app"   # o'z nomingizga moslang
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib", "staticlib"]
+
+[dependencies]
+flutter_rust_bridge = "=2.12.0"
+anyhow = "1"
+thiserror = "1"
+tokio = { version = "1", features = ["rt-multi-thread", "time", "macros", "sync"] }
+image = { version = "0.25", default-features = false, features = ["png"] }
+
+# --- Windows ---
+[target.'cfg(target_os = "windows")'.dependencies]
+windows = { version = "0.58", features = [
+    "Win32_Foundation",
+    "Win32_UI_WindowsAndMessaging",
+    "Win32_System_Threading",
+    "Win32_System_ProcessStatus",
+    "Win32_Graphics_Gdi",
+    "Win32_UI_Shell",
+    "Win32_UI_Accessibility",
+    "Win32_System_Com",
+] }
+
+# --- macOS ---
+[target.'cfg(target_os = "macos")'.dependencies]
+objc2 = "0.5"
+objc2-foundation = { version = "0.2", features = [
+    "NSString",
+    "NSURL",
+    "NSData",
+    "NSDictionary",
+] }
+objc2-app-kit = { version = "0.2", features = [
+    "NSWorkspace",
+    "NSRunningApplication",
+    "NSImage",
+    "NSImageRep",
+    "NSBitmapImageRep",
+] }
+core-foundation = "0.10"
+core-graphics = "0.24"
+
+# --- Linux ---
+[target.'cfg(target_os = "linux")'.dependencies]
+x11rb = "0.13"
+# AT-SPI keyinroq URL uchun qo'shamiz:
+# atspi = "0.22"
