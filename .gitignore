@@ -1,4 +1,4 @@
-# ── Dart / Flutter ──────────────────────────────────────────────────────────
+# ── Flutter / Dart ───────────────────────────────────────────────────────────
 .dart_tool/
 build/
 .flutter-plugins
@@ -12,12 +12,25 @@ rust/target/
 **/.DS_Store
 macos/Flutter/ephemeral/
 macos/Pods/
-**/xcuserdata/
+macos/Podfile.lock
+
+# ── iOS ─────────────────────────────────────────────────────────────────────
+ios/Flutter/ephemeral/
+ios/Pods/
+ios/Podfile.lock
+
+# ── Android ─────────────────────────────────────────────────────────────────
+android/.gradle/
+android/captures/
+android/local.properties
+android/key.properties
 
 # ── IDE ─────────────────────────────────────────────────────────────────────
 .idea/
 *.iml
 .vscode/
 
-# ── Logs / temp ──────────────────────────────────────────────────────────────
+# ── Temp / editor ────────────────────────────────────────────────────────────
 *.log
+*.swp
+*.bak

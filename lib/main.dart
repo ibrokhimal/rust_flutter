@@ -1,16 +1,15 @@
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:my_app/src/rust/api/window_monitor.dart';
 import 'package:my_app/src/rust/api/types.dart';
 import 'package:my_app/src/rust/frb_generated.dart';
 
 Future<void> main() async {
-  await RustLib.init();
-  // Limit Flutter's decoded-image cache: default is 100 MB, 20 entries is enough
-  // for a window-monitor app that shows one icon at a time.
   WidgetsFlutterBinding.ensureInitialized();
+  await RustLib.init();
+  // One icon visible at a time; 10 MB is plenty.
   PaintingBinding.instance.imageCache.maximumSize = 20;
-  PaintingBinding.instance.imageCache.maximumSizeBytes =
-      10 * 1024 * 1024; // 10 MB
+  PaintingBinding.instance.imageCache.maximumSizeBytes = 10 * 1024 * 1024;
   runApp(const MyApp());
 }
 
@@ -33,10 +32,23 @@ class ActiveWindowMonitor extends StatefulWidget {
 class _ActiveWindowMonitorState extends State<ActiveWindowMonitor> {
   late final Stream<WindowInfo> _windowStream;
 
+  // Reuse the same Uint8List object per process so Flutter's MemoryImage
+  // cache key stays stable and the PNG isn't re-decoded on every title change.
+  Uint8List? _iconBytes;
+  String? _iconProcessPath;
+
   @override
   void initState() {
     super.initState();
     _windowStream = watchActiveWindow(pollMs: 400);
+  }
+
+  Uint8List? _stableIcon(WindowInfo info) {
+    if (info.processPath != _iconProcessPath) {
+      _iconProcessPath = info.processPath;
+      _iconBytes = info.iconPng;
+    }
+    return _iconBytes;
   }
 
   @override
@@ -55,6 +67,8 @@ class _ActiveWindowMonitorState extends State<ActiveWindowMonitor> {
             }
 
             final info = snapshot.data!;
+            final icon = _stableIcon(info);
+
             return Padding(
               padding: const EdgeInsets.all(24),
               child: Column(
@@ -66,15 +80,21 @@ class _ActiveWindowMonitorState extends State<ActiveWindowMonitor> {
                   ),
                   const SizedBox(height: 20),
 
-                  // Icon
-                  if (info.iconPng != null)
-                    Image.memory(info.iconPng!, width: 48, height: 48)
-                  else
-                    const Icon(Icons.window, size: 48, color: Colors.grey),
+                  // RepaintBoundary prevents the icon layer from being
+                  // repainted when only the title or URL text changes.
+                  RepaintBoundary(
+                    child: icon != null
+                        ? Image.memory(
+                            icon,
+                            width: 48,
+                            height: 48,
+                            gaplessPlayback: true,
+                          )
+                        : const Icon(Icons.window, size: 48, color: Colors.grey),
+                  ),
 
                   const SizedBox(height: 16),
 
-                  // Title
                   Text(
                     info.title.isEmpty ? "Noma'lum" : info.title,
                     textAlign: TextAlign.center,
@@ -86,18 +106,11 @@ class _ActiveWindowMonitorState extends State<ActiveWindowMonitor> {
 
                   const SizedBox(height: 8),
 
-                  // Process name
                   Text(
                     info.processName,
                     style: const TextStyle(color: Colors.grey),
                   ),
 
-                  Text(
-                    info.url ?? "",
-                    style: const TextStyle(color: Colors.grey),
-                  ),
-
-                  // URL (faqat brauzer bo'lsa)
                   if (info.url != null) ...[
                     const SizedBox(height: 12),
                     SelectableText(

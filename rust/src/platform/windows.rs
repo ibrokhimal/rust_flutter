@@ -23,7 +23,7 @@ use windows::{
 };
 
 pub async fn current_window() -> anyhow::Result<Option<WindowInfo>> {
-    tokio::task::spawn_blocking(collect_active_window).await?
+    tokio::task::block_in_place(collect_active_window)
 }
 
 fn collect_active_window() -> anyhow::Result<Option<WindowInfo>> {

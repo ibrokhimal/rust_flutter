@@ -91,7 +91,7 @@ fn throttled_browser_url(bundle_id: &str) -> Option<String> {
 }
 
 pub async fn current_window() -> anyhow::Result<Option<WindowInfo>> {
-    tokio::task::spawn_blocking(|| autoreleasepool(|_| collect_active_window())).await?
+    tokio::task::block_in_place(|| autoreleasepool(|_| collect_active_window()))
 }
 
 fn collect_active_window() -> anyhow::Result<Option<WindowInfo>> {
