@@ -90,6 +90,17 @@ fn throttled_browser_url(bundle_id: &str) -> Option<String> {
     url
 }
 
+/// Returns the frontmost app's PID — two ObjC messages, takes ~microseconds.
+pub fn frontmost_pid() -> i32 {
+    autoreleasepool(|_| unsafe {
+        let workspace = NSWorkspace::sharedWorkspace();
+        workspace
+            .frontmostApplication()
+            .map(|app| objc2::msg_send![&*app, processIdentifier])
+            .unwrap_or(0)
+    })
+}
+
 pub async fn current_window() -> anyhow::Result<Option<WindowInfo>> {
     tokio::task::block_in_place(|| autoreleasepool(|_| collect_active_window()))
 }

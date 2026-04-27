@@ -22,6 +22,11 @@ use windows::{
     },
 };
 
+/// Returns the current foreground window handle — single Win32 call.
+pub fn frontmost_hwnd() -> u64 {
+    unsafe { GetForegroundWindow().0 as u64 }
+}
+
 pub async fn current_window() -> anyhow::Result<Option<WindowInfo>> {
     tokio::task::block_in_place(collect_active_window)
 }

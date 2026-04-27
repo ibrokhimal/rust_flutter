@@ -5,6 +5,23 @@ use x11rb::{
     rust_connection::RustConnection,
 };
 
+/// Returns the active window XID — one X11 request/reply pair.
+pub fn frontmost_xid() -> u32 {
+    let Ok((conn, screen_num)) = RustConnection::connect(None) else { return 0; };
+    let root = conn.setup().roots[screen_num].root;
+    let Ok(atom_reply) = conn
+        .intern_atom(false, b"_NET_ACTIVE_WINDOW")
+        .and_then(|c| c.reply().map_err(Into::into))
+    else {
+        return 0;
+    };
+    conn.get_property(false, root, atom_reply.atom, AtomEnum::WINDOW, 0, 1)
+        .ok()
+        .and_then(|c| c.reply().ok())
+        .and_then(|r| r.value.get(..4).map(|b| u32::from_ne_bytes(b.try_into().unwrap())))
+        .unwrap_or(0)
+}
+
 pub async fn current_window() -> anyhow::Result<Option<WindowInfo>> {
     tokio::task::block_in_place(collect_active_window)
 }
